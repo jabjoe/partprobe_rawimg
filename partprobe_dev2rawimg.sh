@@ -11,6 +11,9 @@ fi
 
 bytes=$(blockdev --getsize64 $dev)
 
+# Round up to the nearest gigabyte
+bytes=$(echo $bytes | python -c "print(round(float(input())/(1024 * 1024 * 1024))*(1024 * 1024 * 1024))")
+
 echo "Image is $bytes bytes"
 
 fallocate -l$bytes "$img"
