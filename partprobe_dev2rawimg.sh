@@ -25,6 +25,7 @@ echo "Using $loopdev"
 losetup $loopdev "$img"
 
 dd if="$dev" of="$img" bs=1M count=1
+sync
 
 partprobe "$loopdev"
 partprobe "$dev"
