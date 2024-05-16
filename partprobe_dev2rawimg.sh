@@ -30,6 +30,8 @@ sync
 partprobe "$loopdev"
 partprobe "$dev"
 
+sleep 1 # Should wait partitions rather flat wait, but for now....
+
 partitions=$(lsblk -f $dev | awk '{print $1,$2}' | grep ─)
 
 dev_basename=$(basename $dev)
