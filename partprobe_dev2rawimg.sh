@@ -22,9 +22,9 @@ loopdev=$(losetup -f)
 
 echo "Using $loopdev"
 
+dd if="$dev" of="$img" bs=1M count=1 conv=notrunc
 losetup $loopdev "$img"
 
-dd if="$dev" of="$img" bs=1M count=1
 sync
 
 partprobe "$loopdev"
