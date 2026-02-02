@@ -9,14 +9,31 @@ then
   exit -1
 fi
 
-loopdev=$(losetup -f)
+[ -n "$(which kpartx)" ] || { echo "No kpartx found."; exit -1; }
 
-losetup -P $loopdev "$img"
+loopdev=/dev/mapper/$(kpartx -av "$img" | head -n1 | awk '{print $3}')
+loopdev=${loopdev/p1/}
 
-dd if="$img" of="$dev" bs=1M count=1
+gdisk -l $loopdev | grep "MBR only"
+
+if [ "$?" = "0" ]
+then
+    echo "MBR partition table"
+    dd if="$img" of=$dev bs=1M count=1 conv=notrunc
+else
+    echo "GPT partition table"
+    sgdisk --backup="$dev".table "$img"
+    sgdisk --load-backup="$dev".table "$dev"
+
+    [ "$?" = "0" ] || { echo "Partition table clone failed."; exit -1; }
+
+    sgdisk -C "$dev" # Recompute CHS values in protective or hybrid MBR.
+    sgdisk -e "$dev" # Move backup GPT data structures to the end of the disk.
+fi
+
 
 partprobe "$dev"
-partprobe $loopdev
+
 sleep 0.1
 partitions=$(lsblk -f $loopdev | awk '{print $1,$2}' | grep ─)
 
@@ -36,4 +53,4 @@ do
   partclone.$devtype -b -d -s "$devpart" -o "$outpart"
 done <<< "$partitions"
 
-losetup -D $loopdev
+kpartx -d "$img"
